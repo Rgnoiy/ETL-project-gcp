@@ -29,11 +29,11 @@ def hash(s: str) -> str:
     
     
 
-def ReadCSVandCleanDF(event_id):
+def ReadCSVandCleanDF(file_url):
     
     """Read .csv file from cloud storage, generate hash id, drop columns."""
     
-    df = pd.read_csv(f'gs://{event_id}', names=['timestamp', 'store', 'customer_name', 'basket_items', 'total_price', 'cash_or_card', 'card_number'], parse_dates=['timestamp'], infer_datetime_format=True, dayfirst=True, cache_dates=True)
+    df = pd.read_csv(file_url, names=['timestamp', 'store', 'customer_name', 'basket_items', 'total_price', 'cash_or_card', 'card_number'], parse_dates=['timestamp'], infer_datetime_format=True, dayfirst=True, cache_dates=True)
     df["order_id_pre_hash"] = str(df["timestamp"]) + df["store"] + df["customer_name"]
     df.index = df["order_id_pre_hash"].apply(lambda x: hash(x))
     df['timestamp'] = df['timestamp'].dt.strftime('%Y-%0m-%0d %H:%M:%S')
@@ -41,6 +41,7 @@ def ReadCSVandCleanDF(event_id):
     df.drop(columns=['customer_name'], inplace=True)
     df.drop(columns=["order_id_pre_hash"], inplace=True)
     df.index.name = 'transaction_hash_id'
+    print(df)
     
     return df
     
@@ -69,72 +70,70 @@ def LoadProduct(df, client):
     # rename column name
     product_list.rename(columns={0: 'product_name', 1: 'price'}, inplace=True)
     # convert product df into dict and iterate over it in order to extract each product name and insert it into db
+    product_list["product_id"] = product_list["product_name"].apply(lambda x: hash(x))
+    print(product_list)
     try:
         for product in product_list.to_dict('records'):
-            sql = f"INSERT INTO product (product_name, price) SELECT '{product['product_name']}', {product['price']} WHERE NOT EXISTS (SELECT * FROM product WHERE product_name = '{product['product_name']}');"
-        query_job = client.query(sql)   # make an API request
+            sql = f"""INSERT transformed_data_for_cafe.product (product_id, product_name, price) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<product_id STRING, product_name STRING, price DECIMAL>>[('{product["product_id"]}', '{product['product_name']}', {product['price']})]) AS col) SELECT product_id, product_name, price FROM w WHERE NOT EXISTS (SELECT product_name FROM transformed_data_for_cafe.product WHERE product_name = "{product['product_name']}");"""
+            query_job = client.query(sql)   # make an API request
+        print(query_job.result())
         print("Product table has been loaded.")
     except Exception as e: 
-        print(e)
+        print(f"the error is : {e}")
+
+    return product_list
 
 
 def LoadStore(df, client):
 
     # extract 'store' column + remove leading and trailing space of the string + convert it to df
     store = df['store'].apply(lambda x: x.strip(' ')).drop_duplicates().to_frame()
-    # rename column names
-    store.rename(columns={'store':'store_name'}, inplace=True)
-    # gain store name
-    store_name = store['store_name'][0]
+    # grant store_name and store_id
+    store = store.to_dict('split')
+    store_id = store["index"][0]
+    store_name = store["data"][0][0]
+    print(store_name, store_id)
     try:
-        sql = f"INSERT INTO store (store_name) SELECT '{store_name}' WHERE NOT EXISTS (SELECT * FROM store WHERE store_name = '{store_name}');"
+        sql = f"""INSERT transformed_data_for_cafe.store (store_id, store_name) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<store_id STRING, store_name STRING>>[('{store_id}', '{store_name}')]) AS col) SELECT * FROM w WHERE NOT EXISTS (SELECT store_name FROM transformed_data_for_cafe.store WHERE store_name = '{store_name}');"""
         query_job = client.query(sql)   # make an API request
         print("Store table has been loaded.")
     except Exception as e: 
-        print(e)
-    return store_name
+        print(f"the error is : {e}")
+    return store_id
     
     
-def LoadBasketItemsDF(df):
+def LoadBasketItemsDF(df, product_list):
     
     """Transform df to fit in basket table, return df."""
     
     # generate quantity column
     basket_items = df.groupby(df.index)[0].apply(lambda x: x.value_counts()).to_frame()
+    # fix multi-index problem
     basket_items = basket_items.reset_index()
-    try:
-        sql = '''SELECT * FROM product'''
-        product_from_db = pd.read_gbq(sql, index_col='product_id')
-    except Exception as e:
-        print(e)
-    # replace product name by its id
-    basket_items['level_1'] = basket_items['level_1'].apply(lambda x: product_from_db[product_from_db.product_name == x].index[0])
+    basket_items['level_1'] = basket_items['level_1'].apply(lambda x: product_list[product_list.product_name == x]["product_id"][0])
     # rename columns
-    basket_items.rename(columns={'level_1':'product_id', 0:'quantity'}, inplace=True)
+    basket_items.rename(columns={"order_id_pre_hash": "transaction_hash_id", 'level_1': 'product_id', 0: 'quantity'}, inplace=True)
+    print(basket_items)
     try:
         # load df directly to bigquery
-        basket_items.to_gbq("transformed_data_for_cafe.basket")
+        basket_items.to_gbq("transformed_data_for_cafe.basket", if_exists='append')
     except Exception as e:
-        print(e)
+        print(f"the error is : {e}")
     
     
-def LoadTransactionDF(df, store_name):
+def LoadTransactionDF(df, store_id):
     
     """Transform df to fit in transaction table, return df."""
     
     # drop unwanted columns
     transaction = df.drop(columns=['basket_items', 'items'])
     # replace store name by its id
-    try:
-        sql = f"""SELECT * FROM store WHERE store_name='{store_name}'"""
-        store_from_db = pd.read_gbq(sql, index_col='store_id')
-    except Exception as e:
-        print(e)
-    transaction['store'] = int(store_from_db.index[0])
+    transaction['store'] = store_id
     # Rename column names to match DB columns
     transaction.rename(columns={'store':'store_id', 'cash_or_card':'payment_method'}, inplace=True)
+    print(transaction)
     try:
         # load df directly to bigquery
-        transaction.to_gbq("transformed_data_for_cafe.transaction")
+        transaction.to_gbq("transformed_data_for_cafe.transaction", if_exists='append')
     except Exception as e:
-        print(e)
+        print(f"the error is : {e}")
