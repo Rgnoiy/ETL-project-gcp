@@ -1,4 +1,3 @@
-import re
 import hashlib
 from google.cloud import bigquery
 import pandas as pd
@@ -8,39 +7,30 @@ import gcsfs
         
 def hash(s: str) -> str:
     return str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16))[:10]
-        
-        
-# def SaveCSVToS3Bucket(df, s3_file_name, index=True, date=None):
-    
-    """Write dataframe to .csv and save it in another s3 bucket."""
-    
-    csv_buffer = StringIO()
-    s3_resource = boto3.resource('s3')
-    bucket = 'team4-transformed-data'
-    # store .csv file in buffer
-    df.to_csv(csv_buffer, index=index, date_format=date)
-    # put .csv file into S3 bucket
-    if date is None:
-        s3_resource.Object(bucket, f'{s3_file_name}_basket.csv').put(Body=csv_buffer.getvalue())
-        print(f"{s3_file_name}_basket.csv has been added to s3 bucket.")
-    else:
-        s3_resource.Object(bucket, f'{s3_file_name}_transaction.csv').put(Body=csv_buffer.getvalue())
-        print(f"{s3_file_name}_transaction.csv has been added to s3 bucket.")
-    
     
 
 def ReadCSVandCleanDF(file_url):
     
     """Read .csv file from cloud storage, generate hash id, drop columns."""
     
+    # read csv from cloud storage
     df = pd.read_csv(file_url, names=['timestamp', 'store', 'customer_name', 'basket_items', 'total_price', 'cash_or_card', 'card_number'], parse_dates=['timestamp'], infer_datetime_format=True, dayfirst=True, cache_dates=True)
+    
+    # generate hash code as unique id for each transaction record
     df["order_id_pre_hash"] = str(df["timestamp"]) + df["store"] + df["customer_name"]
     df.index = df["order_id_pre_hash"].apply(lambda x: hash(x))
+    
+    # set standard formate for datetime in bigquery
     df['timestamp'] = df['timestamp'].dt.strftime('%Y-%0m-%0d %H:%M:%S')
+    
+    # drop unwanted columns
     df.drop(columns=['card_number'], inplace=True)
     df.drop(columns=['customer_name'], inplace=True)
     df.drop(columns=["order_id_pre_hash"], inplace=True)
+    
+    # to match the column name in the table
     df.index.name = 'transaction_hash_id'
+
     print(df)
     
     return df
@@ -65,13 +55,15 @@ def ExplodedItems(df):
         
         
 def LoadProduct(df, client):
-    # drop duplicated product type
+    # select the unique products out of the list
     product_list = df.drop_duplicates(subset=[0], keep='first', ignore_index=True)
-    # rename column name
+
     product_list.rename(columns={0: 'product_name', 1: 'price'}, inplace=True)
-    # convert product df into dict and iterate over it in order to extract each product name and insert it into db
+
+    # assign unique id for each product
     product_list["product_id"] = product_list["product_name"].apply(lambda x: hash(x))
     print(product_list)
+    
     try:
         for product in product_list.to_dict('records'):
             sql = f"""INSERT transformed_data_for_cafe.product (product_id, product_name, price) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<product_id STRING, product_name STRING, price DECIMAL>>[('{product["product_id"]}', '{product['product_name']}', {product['price']})]) AS col) SELECT product_id, product_name, price FROM w WHERE NOT EXISTS (SELECT product_name FROM transformed_data_for_cafe.product WHERE product_name = "{product['product_name']}");"""
@@ -85,14 +77,18 @@ def LoadProduct(df, client):
 
 
 def LoadStore(df, client):
-
     # extract 'store' column + remove leading and trailing space of the string + convert it to df
     store = df['store'].apply(lambda x: x.strip(' ')).drop_duplicates().to_frame()
+
+    # generate hash id for the store 
+    store.index = store["store"].apply(lambda x: hash(x))
+
     # grant store_name and store_id
     store = store.to_dict('split')
     store_id = store["index"][0]
     store_name = store["data"][0][0]
     print(store_name, store_id)
+
     try:
         sql = f"""INSERT transformed_data_for_cafe.store (store_id, store_name) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<store_id STRING, store_name STRING>>[('{store_id}', '{store_name}')]) AS col) SELECT * FROM w WHERE NOT EXISTS (SELECT store_name FROM transformed_data_for_cafe.store WHERE store_name = '{store_name}');"""
         query_job = client.query(sql)   # make an API request
@@ -110,9 +106,10 @@ def LoadBasketItemsDF(df, product_list):
     basket_items = df.groupby(df.index)[0].apply(lambda x: x.value_counts()).to_frame()
     # fix multi-index problem
     basket_items = basket_items.reset_index()
-    basket_items['level_1'] = basket_items['level_1'].apply(lambda x: product_list[product_list.product_name == x]["product_id"][0])
+    basket_items.rename(columns={'level_1': 'product_id', 0: 'quantity'}, inplace=True)
+   #  product_list.index = product_list['product_id']
+    basket_items['product_id'] = basket_items['product_id'].apply(lambda x: product_list[product_list.product_name == x].product_id.iloc[0])
     # rename columns
-    basket_items.rename(columns={"order_id_pre_hash": "transaction_hash_id", 'level_1': 'product_id', 0: 'quantity'}, inplace=True)
     print(basket_items)
     try:
         # load df directly to bigquery
@@ -131,9 +128,11 @@ def LoadTransactionDF(df, store_id):
     transaction['store'] = store_id
     # Rename column names to match DB columns
     transaction.rename(columns={'store':'store_id', 'cash_or_card':'payment_method'}, inplace=True)
+    transaction.reset_index(inplace=True)
     print(transaction)
     try:
         # load df directly to bigquery
         transaction.to_gbq("transformed_data_for_cafe.transaction", if_exists='append')
+        print("Transaction table has been loaded.")
     except Exception as e:
         print(f"the error is : {e}")

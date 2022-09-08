@@ -8,9 +8,9 @@ def create_tables(client):
     """
     CREATE TABLE IF NOT EXISTS transformed_data_for_cafe.transaction(
       transaction_hash_id STRING,
-      timestamp DATETIME,
+      timestamp STRING,
       store_id STRING,
-      total_price DECIMAL,
+      total_price FLOAT,
       payment_method STRING,
     );
     """,
@@ -36,7 +36,7 @@ def create_tables(client):
     CREATE TABLE IF NOT EXISTS transformed_data_for_cafe.basket(
       transaction_hash_id STRING,
       product_id STRING,
-      quantity int
+      quantity INT
     );
     """)
     
