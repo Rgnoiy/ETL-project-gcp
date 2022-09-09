@@ -98,7 +98,7 @@ def LoadStore(df, client):
     return store_id
     
     
-def LoadBasketItemsDF(df, product_list):
+def LoadBasketItemsDF(df, product_list, client):
     
     """Transform df to fit in basket table, return df."""
     
@@ -111,14 +111,21 @@ def LoadBasketItemsDF(df, product_list):
     basket_items['product_id'] = basket_items['product_id'].apply(lambda x: product_list[product_list.product_name == x].product_id.iloc[0])
     # rename columns
     print(basket_items)
+    # try:
+    #     
+    #     basket_items.to_gbq("transformed_data_for_cafe.basket", if_exists='append')
+    # except Exception as e:
+    #     print(f"the error is : {e}")
     try:
         # load df directly to bigquery
-        basket_items.to_gbq("transformed_data_for_cafe.basket", if_exists='append')
+        table_id = 'glass-haven-360720.transformed_data_for_cafe.basket'
+        job = client.load_table_from_dataframe(basket_items, table_id)
+        print("basket table has been added")
     except Exception as e:
-        print(f"the error is : {e}")
+        print(e)
     
     
-def LoadTransactionDF(df, store_id):
+def LoadTransactionDF(df, store_id, client):
     
     """Transform df to fit in transaction table, return df."""
     
@@ -130,9 +137,15 @@ def LoadTransactionDF(df, store_id):
     transaction.rename(columns={'store':'store_id', 'cash_or_card':'payment_method'}, inplace=True)
     transaction.reset_index(inplace=True)
     print(transaction)
+    # try:
+    #     # load df directly to bigquery
+    #     transaction.to_gbq("transformed_data_for_cafe.transaction", if_exists='append')
+    #     print("Transaction table has been loaded.")
+    # except Exception as e:
+    #     print(f"the error is : {e}")
     try:
-        # load df directly to bigquery
-        transaction.to_gbq("transformed_data_for_cafe.transaction", if_exists='append')
-        print("Transaction table has been loaded.")
+        table_id = 'glass-haven-360720.transformed_data_for_cafe.transaction'
+        job = client.load_table_from_dataframe(transaction, table_id)
+        print("transaction table has been added")
     except Exception as e:
-        print(f"the error is : {e}")
+        print(e)

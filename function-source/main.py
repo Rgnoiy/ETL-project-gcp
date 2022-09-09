@@ -30,7 +30,7 @@ def data_transformation(cloud_event):
    product_list = f.LoadProduct(f.ExplodedItems(df), client)
 
 
-   f.LoadTransactionDF(df, store_id)
+   f.LoadTransactionDF(df, store_id, client)
 
 
-   f.LoadBasketItemsDF(f.ExplodedItems(df), product_list)
+   f.LoadBasketItemsDF(f.ExplodedItems(df), product_list, client)
