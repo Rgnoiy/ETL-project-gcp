@@ -4,8 +4,8 @@ on:
       - master
 
 env:
-  AWS_ACCESS_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
+  GCP_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
+  GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
 
 jobs:
 
@@ -16,14 +16,21 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
           
-      # - name: Zip up src codes folder
-      #  run: zip -r function-source.zip function-source
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Run unit tests
+        run: python -m pytest
+          
+      - name: Zip up src codes folder
+        run: zip -r function-source.zip function-source
       
-      #- name: list all files
-       # run: ls
+      - name: list all files
+        run: ls
 
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
+#       - name: Install Terraform
+#         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform fmt
         run: terraform fmt -check
