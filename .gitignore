@@ -3,3 +3,5 @@
 terraform.tfstate
 terraform.tfstate.backup
 *.json
+.pytest_cache
+_pycache_

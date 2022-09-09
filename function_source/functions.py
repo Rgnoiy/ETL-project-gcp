@@ -1,5 +1,4 @@
 import hashlib
-from google.cloud import bigquery
 import pandas as pd
 import gcsfs
 
@@ -23,10 +22,13 @@ def ReadCSVandCleanDF(file_url):
     # set standard formate for datetime in bigquery
     df['timestamp'] = df['timestamp'].dt.strftime('%Y-%0m-%0d %H:%M:%S')
     
-    # drop unwanted columns
+    # drop confidential columns 
     df.drop(columns=['card_number'], inplace=True)
     df.drop(columns=['customer_name'], inplace=True)
     df.drop(columns=["order_id_pre_hash"], inplace=True)
+    
+    # handle missing data
+    df.fillna(value='unknown', inplace=False)
     
     # to match the column name in the table
     df.index.name = 'transaction_hash_id'
@@ -50,7 +52,7 @@ def ExplodedItems(df):
     result = items.str.rsplit(pat='-', n=1, expand=True)
     # remove leading and trailing space of the string
     result[0] = result[0].apply(lambda x: x.strip(' '))
-    
+    result[1] = result[1].apply(lambda x: x.strip(' '))
     return result
         
         
@@ -95,6 +97,7 @@ def LoadStore(df, client):
         print("Store table has been loaded.")
     except Exception as e: 
         print(f"the error is : {e}")
+        
     return store_id
     
     
@@ -109,13 +112,7 @@ def LoadBasketItemsDF(df, product_list, client):
     basket_items.rename(columns={'level_1': 'product_id', 0: 'quantity'}, inplace=True)
    #  product_list.index = product_list['product_id']
     basket_items['product_id'] = basket_items['product_id'].apply(lambda x: product_list[product_list.product_name == x].product_id.iloc[0])
-    # rename columns
-    print(basket_items)
-    # try:
-    #     
-    #     basket_items.to_gbq("transformed_data_for_cafe.basket", if_exists='append')
-    # except Exception as e:
-    #     print(f"the error is : {e}")
+
     try:
         # load df directly to bigquery
         table_id = 'glass-haven-360720.transformed_data_for_cafe.basket'
@@ -123,6 +120,8 @@ def LoadBasketItemsDF(df, product_list, client):
         print("basket table has been added")
     except Exception as e:
         print(e)
+        
+    return basket_items
     
     
 def LoadTransactionDF(df, store_id, client):
@@ -130,22 +129,18 @@ def LoadTransactionDF(df, store_id, client):
     """Transform df to fit in transaction table, return df."""
     
     # drop unwanted columns
-    transaction = df.drop(columns=['basket_items', 'items'])
+    transaction = df.drop(columns=['basket_items'])
     # replace store name by its id
     transaction['store'] = store_id
     # Rename column names to match DB columns
     transaction.rename(columns={'store':'store_id', 'cash_or_card':'payment_method'}, inplace=True)
     transaction.reset_index(inplace=True)
-    print(transaction)
-    # try:
-    #     # load df directly to bigquery
-    #     transaction.to_gbq("transformed_data_for_cafe.transaction", if_exists='append')
-    #     print("Transaction table has been loaded.")
-    # except Exception as e:
-    #     print(f"the error is : {e}")
+
     try:
         table_id = 'glass-haven-360720.transformed_data_for_cafe.transaction'
         job = client.load_table_from_dataframe(transaction, table_id)
         print("transaction table has been added")
     except Exception as e:
         print(e)
+        
+    return transaction
