@@ -6,7 +6,7 @@ from pandas.testing import assert_frame_equal
 
 
 def test_read_csv():
-    df = ReadCSVandCleanDF("./csv_for_test/testfile1.csv")
+    df = ReadCSVandCleanDF("test/csv_for_test/testfile1.csv")
     d = {
         "timestamp":['2022-06-15 09:23:00', '2022-06-15 09:25:00', '2022-06-15 09:27:00'], \
         "store":["Chesterfield", "Chesterfield", "Chesterfield"], \
@@ -20,7 +20,7 @@ def test_read_csv():
 
 
 def test_exploded_items():
-    df = ExplodedItems(ReadCSVandCleanDF("./csv_for_test/testfile1.csv"))
+    df = ExplodedItems(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"))
     d = {
         0:['Regular Flavoured iced latte - Caramel', 'Regular Flavoured iced latte - Vanilla', 'Regular Flavoured iced latte - Hazelnut', 'Large Flavoured iced latte - Hazelnut', 'Large Flat white', 'Large Flavoured iced latte - Vanilla', 'Large Flavoured iced latte - Hazelnut', 'Regular Flavoured latte - Hazelnut', 'Large Flavoured latte - Hazelnut', 'Regular Flavoured latte - Hazelnut', 'Large Latte'], \
         1:['2.75', '2.75', '2.75', '3.25', '2.45', '3.25', '3.25', '2.55', '2.85', '2.55', '2.45']
@@ -31,12 +31,12 @@ def test_exploded_items():
 
 
 def test_store_df():
-    store_id = LoadStore(ReadCSVandCleanDF("./csv_for_test/testfile1.csv"), 1)
+    store_id = LoadStore(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"), 1)
     assert store_id == "2895903154"
 
 
 def test_product_df():
-    product_list = LoadProduct(ExplodedItems(ReadCSVandCleanDF("./csv_for_test/testfile1.csv")), 1)
+    product_list = LoadProduct(ExplodedItems(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv")), 1)
     d = {
         "product_name": ['Regular Flavoured iced latte - Caramel', 'Regular Flavoured iced latte - Vanilla', 'Regular Flavoured iced latte - Hazelnut', 'Large Flavoured iced latte - Hazelnut', 'Large Flat white', 'Large Flavoured iced latte - Vanilla', 'Regular Flavoured latte - Hazelnut', 'Large Flavoured latte - Hazelnut', 'Large Latte'], \
         "price": ['2.75', '2.75', '2.75', '3.25', '2.45', '3.25', '2.55', '2.85', '2.45'], \
@@ -47,7 +47,7 @@ def test_product_df():
 
 
 def test_transaction_df():
-    transaction = LoadTransactionDF(ReadCSVandCleanDF("./csv_for_test/testfile1.csv"), LoadStore(ReadCSVandCleanDF("./csv_for_test/testfile1.csv"), 1), 1)
+    transaction = LoadTransactionDF(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"), LoadStore(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"), 1), 1)
     print(transaction)
     d = {
         'transaction_hash_id': ['3340786902', '7210250588', '6409276043'], \
@@ -61,7 +61,7 @@ def test_transaction_df():
 
 
 def test_basket_df():
-    basket_items = LoadBasketItemsDF(ExplodedItems(ReadCSVandCleanDF("./csv_for_test/testfile1.csv")), LoadProduct(ExplodedItems(ReadCSVandCleanDF("./csv_for_test/testfile1.csv")), 1), 1)
+    basket_items = LoadBasketItemsDF(ExplodedItems(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv")), LoadProduct(ExplodedItems(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv")), 1), 1)
     d = {
         "transaction_hash_id": ['3340786902', '3340786902', '3340786902', '3340786902', '3340786902', '6409276043', '6409276043', '6409276043', '6409276043','7210250588'], \
         "product_id": ['4870177303', '5330105066', '2720354948', '1046796418', '1135483680', '1021488178', '1046796418', '4944274648', '7209298201', '4754352824'], \
