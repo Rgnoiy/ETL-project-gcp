@@ -1,5 +1,5 @@
 provider "google" {
-  credentials = "${file("glass-haven-360720-428d8438af1c.json")}"
+  credentials = "${secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY}"
   project = "glass-haven-360720"
   region  = "eu-west2"
   zone    = "eu-west2-a"
