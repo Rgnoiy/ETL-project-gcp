@@ -40,7 +40,7 @@ jobs:
         run: pytest test/
           
       - name: Zip up src codes folder
-        run: zip -r function-source.zip function-source
+        run: zip -r function-source.zip function_source
       
       - name: list all files
         run: ls
