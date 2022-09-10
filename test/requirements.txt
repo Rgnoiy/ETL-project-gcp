@@ -1,2 +1,2 @@
-panadas
-pandas.testing
+panadas==1.4.3
+
