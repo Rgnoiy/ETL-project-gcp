@@ -25,20 +25,19 @@ provider "google" {
 
 # set up a vm
 resource "google_compute_instance" "vm_instance" {
-  name         = "instance-222"
+  name         = "instance-3392"
   machine_type = "e2-medium"
+  zone         = var.zone
 
   boot_disk {
     initialize_params {
-      image = "ubuntu-1804-bionic-v20220824"
+      image = "debian-cloud/debian-11"
     }
   }
 
   network_interface {
     # A default network is created for all GCP projects
     network = "default"
-    access_config {
-    }
   }
 }
 
@@ -126,12 +125,6 @@ resource "google_storage_bucket_access_control" "public_rule1" {
   entity = "OWNER:${google_service_account.service_account.email}"
 }
 
-resource "google_storage_bucket_object" "object" {
-  name   = "function-source.zip"
-  bucket = google_storage_bucket.source-bucket.name
-  source = "./function-source.zip"  
-}
-
 # resource "google_project_iam_member" "gcs-pubsub-publishing" {
 #   project = "my-project-name"
 #   role    = "roles/pubsub.publisher"
@@ -196,5 +189,53 @@ resource "google_cloudfunctions2_function" "function" {
       attribute = "bucket"
       value = google_storage_bucket.trigger-bucket.name
     }
+  }
+}
+
+resource "google_storage_bucket_object" "object" {
+  name   = "function-source.zip"
+  bucket = google_storage_bucket.source-bucket.name
+  source = "./function-source.zip"  
+}
+
+####################################################################################
+# CREATE BIGQUERY DATASET
+####################################################################################
+
+resource "google_bigquery_dataset" "public" {
+  dataset_id                  = "cafe_dataset"
+  description                 = "This dataset is private"
+  location                    = "EU"
+  default_table_expiration_ms = 3600000
+
+  labels = {
+    env = "default"
+  }
+
+  access {
+    role          = "OWNER"
+    user_by_email = google_service_account.service_account.email
+  }
+}
+
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id                  = "private"
+  friendly_name               = "test"
+  description                 = "This dataset is private"
+  location                    = "EU"
+  default_table_expiration_ms = 3600000
+
+  labels = {
+    env = "default"
+  }
+
+  access {
+    role          = "OWNER"
+    user_by_email = google_service_account.bqowner.email
+  }
+
+  access {
+    role   = "READER"
+    domain = "cafe.com"
   }
 }
