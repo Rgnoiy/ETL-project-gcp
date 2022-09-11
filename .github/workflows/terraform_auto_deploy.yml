@@ -4,9 +4,8 @@ on:
       - master
   pull_request:
 
-# env:
-#   GCP_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
-#   GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
+env:
+  GOOGLE_CREDENTIALS:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
 
 jobs:
   build-and-deploy:
@@ -51,9 +50,6 @@ jobs:
       - name: list all files
         run: ls
 
-#       - name: Install Terraform
-#         uses: hashicorp/setup-terraform@v2
-
       - name: Terraform fmt
         run: terraform fmt -check
         continue-on-error: true
@@ -66,9 +62,39 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'push'
+        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false
         continue-on-error: true
+
+      - name: Update Pull Request
+        uses: actions/github-script@6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
         
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'

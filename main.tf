@@ -1,8 +1,31 @@
 provider "google" {
-  # credentials = "${{ env.GCP_SECRET_KEY }}"
   project = var.project_id
   region  = var.region
   zone    = var.zone
+}
+
+# set up a vm
+resource "google_compute_instance" "vm_instance" {
+  name         = "instance-222"
+  machine_type = "e2-medium"
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-1804-bionic-v20220824"
+    }
+  }
+
+  network_interface {
+    # A default network is created for all GCP projects
+    network = "default"
+    access_config {
+    }
+  }
+}
+
+resource "google_compute_network" "vpc_network" {
+  name                    = "terraform-network"
+  auto_create_subnetworks = "true"
 }
 
 # Create a Google Service Account.
