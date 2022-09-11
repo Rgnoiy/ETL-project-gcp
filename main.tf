@@ -61,7 +61,10 @@ resource "google_service_account_iam_member" "service_account_roles" {
 	  "roles/storage.admin",
 	  "roles/cloudfunctions.admin",
 	  "roles/bigquery.admin",
-	  "roles/eventarc.eventReceiver"
+	  "roles/eventarc.eventReceiver",
+    "roles/iam.serviceAccounts.create",
+    "roles/compute.zones.get",
+    "roles/compute.networks.create"
   ])
   role               = each.key
   member             = "serviceAccount:${google_service_account.service_account.email}"
