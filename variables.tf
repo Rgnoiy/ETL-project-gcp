@@ -7,11 +7,11 @@ variable "project_name" {
 }
 
 variable "region" {
-  default = "eu-west2"
+  default = "europe-west2"
 }
 
 variable "zone" {
-  default = "eu-west2-a"
+  default = "europe-west2-a"
 }
 
 variable "service_account_id" {
