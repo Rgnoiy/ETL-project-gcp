@@ -202,8 +202,9 @@ resource "google_storage_bucket_object" "object" {
 # CREATE BIGQUERY DATASET
 ####################################################################################
 
-resource "google_bigquery_dataset" "public" {
-  dataset_id                  = "cafe_dataset"
+
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id                  = "dataset_for_caftransformed_data_for_cafe"
   description                 = "This dataset is private"
   location                    = "EU"
   default_table_expiration_ms = 3600000
@@ -215,23 +216,6 @@ resource "google_bigquery_dataset" "public" {
   access {
     role          = "OWNER"
     user_by_email = google_service_account.service_account.email
-  }
-}
-
-resource "google_bigquery_dataset" "dataset" {
-  dataset_id                  = "private"
-  friendly_name               = "test"
-  description                 = "This dataset is private"
-  location                    = "EU"
-  default_table_expiration_ms = 3600000
-
-  labels = {
-    env = "default"
-  }
-
-  access {
-    role          = "OWNER"
-    user_by_email = google_service_account.bqowner.email
   }
 
   access {
