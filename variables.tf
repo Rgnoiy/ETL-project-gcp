@@ -2,6 +2,10 @@ variable "project_id" {
   default = "glass-haven-360720"
 }
 
+variable "project_name" {
+  default = "ETL-pipeline-appsbroker"
+}
+
 variable "region" {
   default = "eu-west2"
 }
