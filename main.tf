@@ -1,5 +1,5 @@
 provider "google" {
-  credentials = "${{ env.GCP_SECRET_KEY }}"
+  # credentials = "${{ env.GCP_SECRET_KEY }}"
   project = var.project_id
   region  = var.region
   zone    = var.zone
