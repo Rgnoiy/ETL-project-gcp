@@ -13,6 +13,7 @@ resource "google_service_account" "service_account" {
 
 # attach roles to service account.
 resource "google_service_account_iam_member" "service_account_roles" {
+  service_account_id = google_service_account.service_account.account_id
   for_each = toset([
     "roles/iam.serviceAccountTokenCreator",
 	"roles/storage.admin",
