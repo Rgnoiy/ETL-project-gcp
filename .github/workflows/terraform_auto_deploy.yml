@@ -2,10 +2,11 @@ on:
   push:
     branches:
       - master
+  pull_request:
 
-env:
-  GCP_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
-  GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
+# env:
+#   GCP_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
+#   GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
 
 jobs:
   build-and-deploy:
@@ -15,6 +16,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # terraform_version: 0.13.0
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -27,8 +34,7 @@ jobs:
           pip install flake8 pytest pandas gcsfs
           # pip install -r test/requirements.txt
           # pip install -e .
-          
-          
+             
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -56,10 +62,18 @@ jobs:
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan
+        id: plan
+        if: github.event_name == 'push'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+        
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
