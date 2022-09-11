@@ -1,21 +1,21 @@
-terraform {
-  required_providers {
-    gcp = {
-      source = "hashicorp/google"
-    }
-    random = {
-      source = "hashicorp/random"
-    }
-  }
+# terraform {
+#   required_providers {
+#     gcp = {
+#       source = "hashicorp/google"
+#     }
+#     random = {
+#       source = "hashicorp/random"
+#     }
+#   }
 
-  cloud {
-    organization = "miayi_organization"
+#   cloud {
+#     organization = "miayi_organization"
 
-    workspaces {
-      name = "ETL-project-gcp-appsbroker"
-    }
-  }
-}
+#     workspaces {
+#       name = "ETL-project-gcp-appsbroker"
+#     }
+#   }
+# }
 
 provider "google" {
   project = var.project_id
