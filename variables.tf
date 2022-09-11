@@ -1,5 +1,5 @@
 variable "project_id" {
-  defadefault = "glass-haven-360720"
+  default = "glass-haven-360720"
 }
 
 variable "region" {
