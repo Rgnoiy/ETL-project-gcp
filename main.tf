@@ -1,3 +1,22 @@
+terraform {
+  required_providers {
+    gcp = {
+      source = "hashicorp/gcp"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
+
+  cloud {
+    organization = "miayi_organization"
+
+    workspaces {
+      name = "ETL-project-gcp-appsbroker"
+    }
+  }
+}
+
 provider "google" {
   project = var.project_id
   region  = var.region
