@@ -121,7 +121,7 @@ resource "google_storage_bucket" "source-bucket" {
   uniform_bucket_level_access = true
 }
 
-resource "google_storage_bucket_access_control" "public_rule" {
+resource "google_storage_bucket_access_control" "public_rule1" {
   bucket = google_storage_bucket.source-bucket.name
   entity = "OWNER:${google_service_account.service_account.email}"
 }
