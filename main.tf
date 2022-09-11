@@ -61,8 +61,10 @@ resource "google_service_account_iam_member" "service_account_roles" {
 	  "roles/storage.admin",
 	  "roles/cloudfunctions.admin",
 	  "roles/bigquery.admin",
-	  "roles/eventarc.eventReceiver",
     "roles/pubsub.Admin",
+	  "roles/eventarc.eventReceiver",
+    "roles/run.invoker",
+    "roles/artifactregistry.reader",
   ])
   role               = each.key
   member             = "serviceAccount:${google_service_account.service_account.email}"
@@ -100,7 +102,7 @@ resource "google_storage_bucket" "trigger-bucket" {
 
 # Associate service account with bucket
 resource "google_storage_bucket_access_control" "public_rule" {
-  bucket = google_storage_bucket.bucket.name
+  bucket = google_storage_bucket.trigger-bucket.name
   entity = "OWNER:${google_service_account.service_account.email}"
 }
 
@@ -122,27 +124,40 @@ resource "google_storage_bucket_object" "object" {
   source = "./function-source.zip"  
 }
 
-resource "google_project_iam_member" "event-receiving" {
-  project = "my-project-name"
-  role    = "roles/eventarc.eventReceiver"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-  depends_on = [google_project_iam_member.invoking]
-}
+# resource "google_project_iam_member" "gcs-pubsub-publishing" {
+#   project = "my-project-name"
+#   role    = "roles/pubsub.publisher"
+#   member  = "serviceAccount:${google_service_account.service_account.email}"
+# }
 
-resource "google_project_iam_member" "artifactregistry-reader" {
-  project = "my-project-name"
-  role     = "roles/artifactregistry.reader"
-  member   = "serviceAccount:${google_service_account.service_account.email}"
-  depends_on = [google_project_iam_member.event-receiving]
-}
+# resource "google_project_iam_member" "invoking" {
+#   project = var.project_id
+#   role    = "roles/run.invoker"
+#   member  = "serviceAccount:${google_service_account.service_account.email}"
+#   depends_on = [google_project_iam_member.gcs-pubsub-publishing]
+# }
+
+# resource "google_project_iam_member" "event-receiving" {
+#   project = var.project_id
+#   role    = "roles/eventarc.eventReceiver"
+#   member  = "serviceAccount:${google_service_account.service_account.email}"
+#   depends_on = [google_project_iam_member.invoking]
+# }
+
+# resource "google_project_iam_member" "artifactregistry-reader" {
+#   project = var.project_id
+#   role     = "roles/artifactregistry.reader"
+#   member   = "serviceAccount:${google_service_account.service_account.email}"
+#   depends_on = [google_project_iam_member.event-receiving]
+# }
 
 resource "google_cloudfunctions2_function" "function" {
-  depends_on = [
-    google_project_iam_member.event-receiving,
-    google_project_iam_member.artifactregistry-reader
-  ]
+  # depends_on = [
+  #   google_project_iam_member.event-receiving,
+  #   google_project_iam_member.artifactregistry-reader
+  # ]
   name = "csv-transaction-function"
-  location = "var,region"
+  location = var.region
   description = "a new function"
 
   build_config {
@@ -160,7 +175,7 @@ resource "google_cloudfunctions2_function" "function" {
     min_instance_count = 1
     available_memory    = "512M"
     timeout_seconds     = 300
-    ingress_settings = "ALLOW_INTERNAL_ONLY"
+    ingress_settings    = "ALLOW_INTERNAL_ONLY"
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.service_account.email
   }
