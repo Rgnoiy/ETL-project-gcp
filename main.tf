@@ -58,6 +58,7 @@ resource "google_service_account_iam_member" "service_account_roles" {
   service_account_id = "${var.project_name}/${var.project_id}/${var.service_account_id}/${google_service_account.service_account.email}"
   for_each = toset([
     "roles/iam.serviceAccountTokenCreator",
+    "roles/iam.serviceAccountKeys.create",
 	  "roles/storage.admin",
 	  "roles/cloudfunctions.admin",
 	  "roles/bigquery.admin",
@@ -114,8 +115,15 @@ resource "google_storage_bucket_access_control" "public_rule" {
 
 resource "google_storage_bucket" "source-bucket" {
   name     = "gcf-source-code-bucket"
-  location = var.region
+  location = "EU"
+  force_destroy = true
+  storage_class = "MULTI_REGIONAL"
   uniform_bucket_level_access = true
+}
+
+resource "google_storage_bucket_access_control" "public_rule" {
+  bucket = google_storage_bucket.source-bucket.name
+  entity = "OWNER:${google_service_account.service_account.email}"
 }
 
 resource "google_storage_bucket_object" "object" {
