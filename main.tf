@@ -9,14 +9,19 @@ provider "google" {
 resource "google_service_account" "service_account" {
   account_id   = var.service_account_id
   display_name = "A service account for Mia"
-  email = var.service_account_email
 }
 
 # attach roles to service account.
-resource "google_service_account_iam_member" "service_account_role" {
-  service_account_id = google_service_account.service_account.account_id
-  role               = "roles/serviceAccountTokenCreator"
-  member             = google_service_account.service_account.email
+resource "google_service_account_iam_member" "service_account_roles" {
+  for_each = toset([
+    "roles/iam.serviceAccountTokenCreator",
+	"roles/storage.admin",
+	"roles/cloudfunctions.admin",
+	"roles/bigquery.admin",
+	"roles/eventarc.eventReceiver"
+  ])
+  role               = each.key
+  member             = "serviceAccount:${google_service_account.service_account.email}"
 } 
 
 # create a key for service account
@@ -39,20 +44,6 @@ resource "kubernetes_secret" "google-application-credentials" {
 ####################################################################################
 # CREATE BUCKET
 ####################################################################################
-
-# Assign service account storage Admin role.
-resource "google_service_account_iam_member" "storage" {
-  service_account_id = google_service_account.service_account.account_id
-  role               = "roles/storageAdmin"
-  member             = google_service_account.service_account.email
-} 
-
-# Assign service account with storage Admin role.
-resource "google_service_account_iam_member" "storage" {
-  service_account_id = google_service_account.service_account.account_id
-  role               = "roles/storageObjectAdmin"
-  member             = google_service_account.service_account.email
-} 
 
 # Create a bucket in EU
 resource "google_storage_bucket" "bucket" {

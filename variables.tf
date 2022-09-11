@@ -11,10 +11,6 @@ variable "zone" {
 }
 
 variable "service_account_id" {
-  default = "my-service-account"
-}
-
-variable "service_account_email" {
-  default = "${service_account_id}@glass-haven-360720.iam.gserviceaccount.com"
+  default = "mia-service-account"
 }
 
