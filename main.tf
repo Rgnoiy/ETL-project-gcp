@@ -160,10 +160,9 @@ resource "google_storage_bucket_object" "object" {
 # }
 
 resource "google_cloudfunctions2_function" "function" {
-  # depends_on = [
-  #   google_project_iam_member.event-receiving,
-  #   google_project_iam_member.artifactregistry-reader
-  # ]
+  depends_on = [
+    google_service_account_iam_member.service_account_roles
+  ]
   name = "csv-transaction-function"
   location = var.region
   description = "a new function"
