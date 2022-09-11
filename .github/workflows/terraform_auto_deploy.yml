@@ -4,9 +4,8 @@ on:
       - master
   pull_request:
 
-# env:
-#   GCP_KEY_ID:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_KEY_ID }}
-#   GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
+env:
+  GCP_SECRET_KEY:  ${{ secrets.GCP_MAIN_SERVICE_ACCOUNT_SECRET_KEY }}
 
 jobs:
   build-and-deploy:
@@ -32,8 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest pandas gcsfs
-          # pip install -r test/requirements.txt
-          # pip install -e .
+
              
       - name: Lint with flake8
         run: |
@@ -50,9 +48,6 @@ jobs:
       
       - name: list all files
         run: ls
-
-#       - name: Install Terraform
-#         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform fmt
         run: terraform fmt -check
