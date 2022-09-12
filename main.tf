@@ -53,44 +53,44 @@ resource "google_compute_instance" "vm_instance" {
 # CREATE SERVICE ACCOUNT
 ####################################################################################
 
-# Create a Google Service Account.
-resource "google_service_account" "service_account" {
-  account_id   = var.service_account_id
-  display_name = "A service account for Mia"
-}
+# # Create a Google Service Account.
+# resource "google_service_account" "service_account" {
+#   account_id   = var.service_account_id
+#   display_name = "A service account for Mia"
+# }
 
-# attach roles to service account.
-resource "google_service_account_iam_member" "service_account_roles" {
-  service_account_id = "${var.project_name}/${var.project_id}/${var.service_account_id}/${google_service_account.service_account.email}"
-  for_each = toset([
-    "iam.serviceAccountTokenCreator",
-    "iam.serviceAccountKeys.create",
-	  "storage.admin",
-	  "cloudfunctions.admin",
-	  "bigquery.admin",
-    "pubsub.Admin",
-	  "eventarc.eventReceiver",
-    "run.invoker",
-    "artifactregistry.reader",
-  ])
-  role               = each.key
-  member             = "serviceAccount:${google_service_account.service_account.email}"
-} 
+# # attach roles to service account.
+# resource "google_service_account_iam_member" "service_account_roles" {
+#   service_account_id = "${var.project_name}/${var.project_id}/${var.service_account_id}/${google_service_account.service_account.email}"
+#   for_each = toset([
+#     "iam.serviceAccountTokenCreator",
+#     "iam.serviceAccountKeys.create",
+# 	  "storage.admin",
+# 	  "cloudfunctions.admin",
+# 	  "bigquery.admin",
+#     "pubsub.Admin",
+# 	  "eventarc.eventReceiver",
+#     "run.invoker",
+#     "artifactregistry.reader",
+#   ])
+#   role               = each.key
+#   member             = "serviceAccount:${google_service_account.service_account.email}"
+# } 
 
-# create a key for service account
-resource "google_service_account_key" "mykey" {
-  service_account_id = google_service_account.service_account.account_id
-}
+# # create a key for service account
+# resource "google_service_account_key" "mykey" {
+#   service_account_id = google_service_account.service_account.account_id
+# }
 
-# store key in k8s secret
-resource "kubernetes_secret" "google-application-credentials" {
-  metadata {
-    name = "google-application-credentials"
-  }
-  data = {
-    "credentials.json" = base64decode(google_service_account_key.mykey.private_key)
-  }
-}
+# # store key in k8s secret
+# resource "kubernetes_secret" "google-application-credentials" {
+#   metadata {
+#     name = "google-application-credentials"
+#   }
+#   data = {
+#     "credentials.json" = base64decode(google_service_account_key.mykey.private_key)
+#   }
+# }
 
 
 
@@ -185,14 +185,14 @@ resource "google_cloudfunctions2_function" "function" {
     timeout_seconds     = 300
     ingress_settings    = "ALLOW_INTERNAL_ONLY"
     all_traffic_on_latest_revision = true
-    service_account_email = google_service_account.service_account.email
+    service_account_email = var.service_account_email
   }
 
   event_trigger {
     trigger_region = var.region # The trigger must be in the same location as the bucket
     event_type = "google.cloud.storage.object.v1.finalized"
     retry_policy = "RETRY_POLICY_DO_NOT_RETRY"
-    service_account_email = google_service_account.service_account.email
+    service_account_email = var.service_account_email
     event_filters {
       attribute = "bucket"
       value = google_storage_bucket.trigger-bucket.name
@@ -223,7 +223,7 @@ resource "google_bigquery_dataset" "dataset" {
 
   access {
     role          = "OWNER"
-    user_by_email = google_service_account.service_account.email
+    user_by_email = var.service_account_email
   }
 
   access {
