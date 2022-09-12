@@ -116,6 +116,11 @@ resource "google_bigquery_dataset" "dataset" {
   }
 
   access {
+    role          = "OWNER"
+    user_by_email = "miaaayi55@gmail.com"
+  }
+
+  access {
     role   = "READER"
     domain = "cafe.com"
   }
