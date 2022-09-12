@@ -1,24 +1,4 @@
-# terraform {
-#   required_providers {
-#     gcp = {
-#       source = "hashicorp/google"
-#     }
-#     random = {
-#       source = "hashicorp/random"
-#     }
-#   }
-
-#   cloud {
-#     organization = "miayi_organization"
-
-#     workspaces {
-#       name = "ETL-project-gcp-appsbroker"
-#     }
-#   }
-# }
-
 provider "google" {
-  credentials = "${file("glass-haven-360720-428d8438af1c.json")}"
   project = var.project_id
   region  = var.region
   zone    = var.zone
@@ -49,52 +29,6 @@ resource "google_compute_instance" "vm_instance" {
 }
 
 
-
-####################################################################################
-# CREATE SERVICE ACCOUNT
-####################################################################################
-
-# # Create a Google Service Account.
-# resource "google_service_account" "service_account" {
-#   account_id   = var.service_account_id
-#   display_name = "A service account for Mia"
-# }
-
-# # attach roles to service account.
-# resource "google_service_account_iam_member" "service_account_roles" {
-#   service_account_id = "${var.project_name}/${var.project_id}/${var.service_account_id}/${google_service_account.service_account.email}"
-#   for_each = toset([
-#     "iam.serviceAccountTokenCreator",
-#     "iam.serviceAccountKeys.create",
-# 	  "storage.admin",
-# 	  "cloudfunctions.admin",
-# 	  "bigquery.admin",
-#     "pubsub.Admin",
-# 	  "eventarc.eventReceiver",
-#     "run.invoker",
-#     "artifactregistry.reader",
-#   ])
-#   role               = each.key
-#   member             = "serviceAccount:${google_service_account.service_account.email}"
-# } 
-
-# # create a key for service account
-# resource "google_service_account_key" "mykey" {
-#   service_account_id = google_service_account.service_account.account_id
-# }
-
-# # store key in k8s secret
-# resource "kubernetes_secret" "google-application-credentials" {
-#   metadata {
-#     name = "google-application-credentials"
-#   }
-#   data = {
-#     "credentials.json" = base64decode(google_service_account_key.mykey.private_key)
-#   }
-# }
-
-
-
 ####################################################################################
 # CREATE BUCKET
 ####################################################################################
@@ -107,15 +41,6 @@ resource "google_storage_bucket" "trigger-bucket" {
   storage_class = "MULTI_REGIONAL"
   uniform_bucket_level_access = true
 }
-
-# Associate service account with bucket
-# resource "google_storage_bucket_access_control" "public_rule" {
-#   bucket = google_storage_bucket.trigger-bucket.name
-#   role   = "OWNER"
-#   entity = "${google_service_account.service_account.email}"
-# }
-
-
 
 ####################################################################################
 # CREATE FUNCTION
@@ -132,97 +57,7 @@ resource "google_storage_bucket" "source-bucket" {
 resource "google_storage_bucket_object" "object" {
   name   = "function_source.zip"
   bucket = google_storage_bucket.source-bucket.name
-  source = "function_source.zip"
-}
-
-# resource "google_storage_bucket_access_control" "public_rule1" {
-#   bucket = google_storage_bucket.source-bucket.name
-#   entity = "OWNER:${google_service_account.service_account.email}"
-# }
-
-# resource "google_project_iam_member" "gcs-pubsub-publishing" {
-#   project = "my-project-name"
-#   role    = "roles/pubsub.publisher"
-#   member  = "serviceAccount:${var.service_account_email}"
-# }
-
-# resource "google_project_iam_member" "invoking" {
-#   project = var.project_id
-#   role    = "roles/run.invoker"
-#   member  = "serviceAccount:${var.service_account_email}"
-#   depends_on = [google_project_iam_member.gcs-pubsub-publishing]
-# }
-
-# resource "google_project_iam_member" "event-receiving" {
-#   project = var.project_id
-#   role    = "roles/eventarc.eventReceiver"
-#   member  = "serviceAccount:${var.service_account_email}"
-#   depends_on = [google_project_iam_member.invoking]
-# }
-
-# resource "google_project_iam_member" "artifactregistry-reader" {
-#   project = var.project_id
-#   role     = "roles/artifactregistry.reader"
-#   member   = "serviceAccount:${var.service_account_email}"
-#   depends_on = [google_project_iam_member.event-receiving]
-# }
-
-
-# trigger
-
-resource "google_eventarc_trigger" "primary" {
-    name = "csv-transaction-function-470445"
-    location = "eu"
-    matching_criteria {
-      attribute = "type"
-      value = "google.cloud.storage.object.v1.finalized"
-      }
-    matching_criteria {
-      attribute = "bucket"
-      value = google_storage_bucket.trigger-bucket.name
-    }
-    destination {
-        cloud_run_service {
-            service = google_cloud_run_service.default.name
-            region = var.region
-        }
-    }
-
-    service_account = var.service_account_email
-
-    labels = {
-        foo = "bar"
-    }
-}
-
-resource "google_pubsub_topic" "foo" {
-    name = "topic0001"
-}
-
-resource "google_cloud_run_service" "default" {
-    name     = "self-created-cloud-run-service"
-    location = var.region
-    metadata {
-        namespace = "305781237272"
-    }
-
-    template {
-        spec {
-            containers {
-                image = "europe-west2-docker.pkg.dev/glass-haven-360720/gcf-artifacts/transformation:version_1"
-                ports {
-                    container_port = 8080
-                }
-            }
-            container_concurrency = 1
-            timeout_seconds = 300
-        }
-    }
-
-    traffic {
-        percent         = 100
-        latest_revision = true
-    }
+  source = "./function_source.zip"
 }
 
 resource "google_cloudfunctions2_function" "function" {
@@ -262,15 +97,13 @@ resource "google_cloudfunctions2_function" "function" {
   }
 }
 
-
-
 ####################################################################################
 # CREATE BIGQUERY DATASET
 ####################################################################################
 
 
 resource "google_bigquery_dataset" "dataset" {
-  dataset_id                  = "transformed_data_for_cafe"
+  dataset_id                  = "cafe_transformed_data"
   location                    = "EU"
 
   labels = {

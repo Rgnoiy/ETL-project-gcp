@@ -59,7 +59,6 @@ def ExplodedItems(df):
 def LoadProduct(df, client):
     # select the unique products out of the list
     product_list = df.drop_duplicates(subset=[0], keep='first', ignore_index=True)
-
     product_list.rename(columns={0: 'product_name', 1: 'price'}, inplace=True)
 
     # assign unique id for each product
@@ -68,7 +67,7 @@ def LoadProduct(df, client):
     
     try:
         for product in product_list.to_dict('records'):
-            sql = f"""INSERT transformed_data_for_cafe.product (product_id, product_name, price) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<product_id STRING, product_name STRING, price DECIMAL>>[('{product["product_id"]}', '{product['product_name']}', {product['price']})]) AS col) SELECT product_id, product_name, price FROM w WHERE NOT EXISTS (SELECT product_name FROM transformed_data_for_cafe.product WHERE product_name = "{product['product_name']}");"""
+            sql = f"""INSERT cafe_transformed_data.product (product_id, product_name, price) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<product_id STRING, product_name STRING, price DECIMAL>>[('{product["product_id"]}', '{product['product_name']}', {product['price']})]) AS col) SELECT product_id, product_name, price FROM w WHERE NOT EXISTS (SELECT product_name FROM cafe_transformed_data.product WHERE product_name = "{product['product_name']}");"""
             query_job = client.query(sql)   # make an API request
         print(query_job.result())
         print("Product table has been loaded.")
@@ -92,7 +91,7 @@ def LoadStore(df, client):
     print(store_name, store_id)
 
     try:
-        sql = f"""INSERT transformed_data_for_cafe.store (store_id, store_name) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<store_id STRING, store_name STRING>>[('{store_id}', '{store_name}')]) AS col) SELECT * FROM w WHERE NOT EXISTS (SELECT store_name FROM transformed_data_for_cafe.store WHERE store_name = '{store_name}');"""
+        sql = f"""INSERT cafe_transformed_data.store (store_id, store_name) WITH w AS (SELECT * FROM UNNEST(ARRAY<STRUCT<store_id STRING, store_name STRING>>[('{store_id}', '{store_name}')]) AS col) SELECT * FROM w WHERE NOT EXISTS (SELECT store_name FROM cafe_transformed_data.store WHERE store_name = '{store_name}');"""
         query_job = client.query(sql)   # make an API request
         print("Store table has been loaded.")
     except Exception as e: 
@@ -115,7 +114,7 @@ def LoadBasketItemsDF(df, product_list, client):
 
     try:
         # load df directly to bigquery
-        table_id = 'glass-haven-360720.transformed_data_for_cafe.basket'
+        table_id = 'glass-haven-360720.cafe_transformed_data.basket'
         job = client.load_table_from_dataframe(basket_items, table_id)
         print("basket table has been added")
     except Exception as e:
@@ -137,7 +136,7 @@ def LoadTransactionDF(df, store_id, client):
     transaction.reset_index(inplace=True)
 
     try:
-        table_id = 'glass-haven-360720.transformed_data_for_cafe.transaction'
+        table_id = 'glass-haven-360720.cafe_transformed_data.transaction'
         job = client.load_table_from_dataframe(transaction, table_id)
         print("transaction table has been added")
     except Exception as e:
