@@ -209,7 +209,7 @@ resource "google_storage_bucket_object" "object" {
 
 
 resource "google_bigquery_dataset" "dataset" {
-  dataset_id                  = "dataset_for_caftransformed_data_for_cafe"
+  dataset_id                  = "transformed_data_for_cafe"
   description                 = "This dataset is private"
   location                    = "EU"
   default_table_expiration_ms = 3600000
