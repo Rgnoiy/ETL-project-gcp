@@ -14,7 +14,7 @@ variable "zone" {
   default = "europe-west2-a"
 }
 
-variable "service_account_id" {
-  default = "mia-service-account"
+variable "service_account_email" {
+  default = "mia-service-account@glass-haven-360720.iam.gserviceaccount.com"
 }
 
