@@ -203,12 +203,6 @@ resource "google_cloudfunctions2_function" "function" {
   }
 }
 
-resource "google_storage_bucket_object" "object" {
-  name   = "function-source.zip"
-  bucket = google_storage_bucket.source-bucket.name
-  source = "./function-source.zip"  
-}
-
 ####################################################################################
 # CREATE BIGQUERY DATASET
 ####################################################################################
