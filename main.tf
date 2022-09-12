@@ -24,28 +24,28 @@ provider "google" {
 }
 
 # set up a vm
-resource "google_compute_instance" "vm_instance" {
-  name         = "instance-3392"
-  machine_type = "e2-medium"
-  zone         = var.zone
+# resource "google_compute_instance" "vm_instance" {
+#   name         = "instance-3392"
+#   machine_type = "e2-medium"
+#   zone         = var.zone
 
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
+#   boot_disk {
+#     initialize_params {
+#       image = "debian-cloud/debian-11"
+#     }
+#   }
 
-  network_interface {
-    # A default network is created for all GCP projects
-    network = "default"
-  }
+#   network_interface {
+#     # A default network is created for all GCP projects
+#     network = "default"
+#   }
 
-  service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    email  = "305781237272-compute@developer.gserviceaccount.com"
-    scopes = ["cloud-platform"]
-  }
-}
+#   service_account {
+#     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+#     email  = "305781237272-compute@developer.gserviceaccount.com"
+#     scopes = ["cloud-platform"]
+#   }
+# }
 
 
 
