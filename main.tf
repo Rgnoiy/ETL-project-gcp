@@ -39,26 +39,11 @@ resource "google_compute_instance" "vm_instance" {
     # A default network is created for all GCP projects
     network = "default"
   }
-}
 
-resource "google_compute_firewall_policy" "default" {
-  parent      = "firewall_policy"
-  short_name  = "my-policy"
-}
-
-resource "google_compute_firewall_policy_rule" "default" {
-  firewall_policy = google_compute_firewall_policy.default.id
-  description = "allow-ssh-from-my-home-ip"
-  priority = 9000
-  action = "allow"
-  direction = "INGRESS"
-  disabled = false
-  match {
-    layer4_configs {
-      ip_protocol = "tcp"
-      ports = [80, 8080, 21, 443, 22]
-    }
-    dest_ip_ranges = ["81.102.229.0/30"]
+  service_account {
+    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+    email  = 305781237272-compute@developer.gserviceaccount.com
+    scopes = ["cloud-platform"]
   }
 }
 
