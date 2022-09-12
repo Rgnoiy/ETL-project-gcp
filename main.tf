@@ -186,7 +186,7 @@ resource "google_cloudfunctions2_function" "function" {
   }
 
   event_trigger {
-    trigger_region = var.region # The trigger must be in the same location as the bucket
+    trigger_region = "eu"
     event_type = "google.cloud.storage.object.v1.finalized"
     retry_policy = "RETRY_POLICY_DO_NOT_RETRY"
     service_account_email = var.service_account_email
