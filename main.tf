@@ -54,10 +54,10 @@ resource "google_compute_instance" "vm_instance" {
 ####################################################################################
 
 # Create a Google Service Account.
-resource "google_service_account" "service_account" {
-  account_id   = var.service_account_id
-  display_name = "A service account for Mia"
-}
+# resource "google_service_account" "service_account" {
+#   account_id   = var.service_account_id
+#   display_name = "A service account for Mia"
+# }
 
 # attach roles to service account.
 resource "google_service_account_iam_member" "service_account_roles" {
@@ -108,11 +108,11 @@ resource "google_storage_bucket" "trigger-bucket" {
 }
 
 # Associate service account with bucket
-resource "google_storage_bucket_access_control" "public_rule" {
-  bucket = google_storage_bucket.trigger-bucket.name
-  role   = "OWNER"
-  entity = "${google_service_account.service_account.email}"
-}
+# resource "google_storage_bucket_access_control" "public_rule" {
+#   bucket = google_storage_bucket.trigger-bucket.name
+#   role   = "OWNER"
+#   entity = "${google_service_account.service_account.email}"
+# }
 
 
 
@@ -128,10 +128,10 @@ resource "google_storage_bucket" "source-bucket" {
   uniform_bucket_level_access = true
 }
 
-resource "google_storage_bucket_access_control" "public_rule1" {
-  bucket = google_storage_bucket.source-bucket.name
-  entity = "OWNER:${google_service_account.service_account.email}"
-}
+# resource "google_storage_bucket_access_control" "public_rule1" {
+#   bucket = google_storage_bucket.source-bucket.name
+#   entity = "OWNER:${google_service_account.service_account.email}"
+# }
 
 # resource "google_project_iam_member" "gcs-pubsub-publishing" {
 #   project = "my-project-name"
