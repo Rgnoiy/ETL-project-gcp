@@ -173,7 +173,7 @@ resource "google_eventarc_trigger" "primary" {
     name = "csv-transaction-function-470445"
     location = var.region
     matching_criteria {
-        attribute = "Cloud Storage"
+        attribute = "type"
         value = "google.cloud.pubsub.topic.v1.messagePublished"
     }
     destination {
