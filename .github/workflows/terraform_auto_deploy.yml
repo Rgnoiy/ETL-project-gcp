@@ -49,9 +49,6 @@ jobs:
       
       - name: list all files
         run: ls
-      
-      - name: terraform destroy
-        run: terraform destroy
 
       - name: Terraform fmt
         run: terraform fmt -check
@@ -62,7 +59,7 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate -no-color
-
+      
       - name: Terraform Plan
         id: plan
         run: terraform plan -no-color -input=false -refresh-only -out=terraform_plan
