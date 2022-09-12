@@ -18,34 +18,35 @@
 # }
 
 provider "google" {
+  credentials = "${file("glass-haven-360720-428d8438af1c.json")}"
   project = var.project_id
   region  = var.region
   zone    = var.zone
 }
 
 # set up a vm
-# resource "google_compute_instance" "vm_instance" {
-#   name         = "instance-3392"
-#   machine_type = "e2-medium"
-#   zone         = var.zone
+resource "google_compute_instance" "vm_instance" {
+  name         = "instance-3392"
+  machine_type = "e2-medium"
+  zone         = var.zone
 
-#   boot_disk {
-#     initialize_params {
-#       image = "debian-cloud/debian-11"
-#     }
-#   }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+    }
+  }
 
-#   network_interface {
-#     # A default network is created for all GCP projects
-#     network = "default"
-#   }
+  network_interface {
+    # A default network is created for all GCP projects
+    network = "default"
+  }
 
-#   service_account {
-#     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-#     email  = "305781237272-compute@developer.gserviceaccount.com"
-#     scopes = ["cloud-platform"]
-#   }
-# }
+  service_account {
+    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+    email  = "305781237272-compute@developer.gserviceaccount.com"
+    scopes = ["cloud-platform"]
+  }
+}
 
 
 
@@ -129,9 +130,9 @@ resource "google_storage_bucket" "source-bucket" {
 }
 
 resource "google_storage_bucket_object" "object" {
-  name   = "function-source.zip"
+  name   = "function_source.zip"
   bucket = google_storage_bucket.source-bucket.name
-  source = "./function-source.zip"  
+  source = "function_source.zip"
 }
 
 # resource "google_storage_bucket_access_control" "public_rule1" {
@@ -171,10 +172,14 @@ resource "google_storage_bucket_object" "object" {
 
 resource "google_eventarc_trigger" "primary" {
     name = "csv-transaction-function-470445"
-    location = var.region
+    location = "eu"
     matching_criteria {
-        attribute = "type"
-        value = "google.cloud.pubsub.topic.v1.messagePublished"
+      attribute = "type"
+      value = "google.cloud.storage.object.v1.finalized"
+      }
+    matching_criteria {
+      attribute = "bucket"
+      value = google_storage_bucket.trigger-bucket.name
     }
     destination {
         cloud_run_service {
@@ -182,6 +187,9 @@ resource "google_eventarc_trigger" "primary" {
             region = var.region
         }
     }
+
+    service_account = var.service_account_email
+
     labels = {
         foo = "bar"
     }
@@ -192,9 +200,8 @@ resource "google_pubsub_topic" "foo" {
 }
 
 resource "google_cloud_run_service" "default" {
-    name     = "eventarc-service"
+    name     = "self-created-cloud-run-service"
     location = var.region
-
     metadata {
         namespace = "305781237272"
     }
@@ -202,13 +209,13 @@ resource "google_cloud_run_service" "default" {
     template {
         spec {
             containers {
-                image = "gcr.io/cloudrun/hello"
+                image = "europe-west2-docker.pkg.dev/glass-haven-360720/gcf-artifacts/transformation:version_1"
                 ports {
                     container_port = 8080
                 }
             }
-            container_concurrency = 50
-            timeout_seconds = 100
+            container_concurrency = 1
+            timeout_seconds = 300
         }
     }
 
@@ -255,11 +262,6 @@ resource "google_cloudfunctions2_function" "function" {
   }
 }
 
-output "function_uri" { 
-value = google_cloudfunctions2_function.function.service_config[0].uri
-}
-
-
 
 
 ####################################################################################
@@ -269,9 +271,7 @@ value = google_cloudfunctions2_function.function.service_config[0].uri
 
 resource "google_bigquery_dataset" "dataset" {
   dataset_id                  = "transformed_data_for_cafe"
-  description                 = "This dataset is private"
   location                    = "EU"
-  default_table_expiration_ms = 3600000
 
   labels = {
     env = "default"
