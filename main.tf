@@ -166,6 +166,58 @@ resource "google_storage_bucket_object" "object" {
 #   depends_on = [google_project_iam_member.event-receiving]
 # }
 
+
+# trigger
+
+resource "google_eventarc_trigger" "primary" {
+    name = "csv-transaction-function-470445"
+    location = var.region
+    matching_criteria {
+        attribute = "Cloud Storage"
+        value = "google.cloud.pubsub.topic.v1.messagePublished"
+    }
+    destination {
+        cloud_run_service {
+            service = google_cloud_run_service.default.name
+            region = var.region
+        }
+    }
+    labels = {
+        foo = "bar"
+    }
+}
+
+resource "google_pubsub_topic" "foo" {
+    name = "topic0001"
+}
+
+resource "google_cloud_run_service" "default" {
+    name     = "eventarc-service"
+    location = var.region
+
+    metadata {
+        namespace = "305781237272"
+    }
+
+    template {
+        spec {
+            containers {
+                image = "gcr.io/cloudrun/hello"
+                ports {
+                    container_port = 8080
+                }
+            }
+            container_concurrency = 50
+            timeout_seconds = 100
+        }
+    }
+
+    traffic {
+        percent         = 100
+        latest_revision = true
+    }
+}
+
 resource "google_cloudfunctions2_function" "function" {
   name = "csv-transaction-function"
   location = var.region
@@ -202,9 +254,11 @@ resource "google_cloudfunctions2_function" "function" {
     }
   }
 }
+
 output "function_uri" { 
 value = google_cloudfunctions2_function.function.service_config[0].uri
 }
+
 
 
 

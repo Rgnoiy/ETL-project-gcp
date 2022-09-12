@@ -1,13 +1,12 @@
 import functions_framework
 from google.cloud import bigquery
-from google.cloud import storage
 import functions as f
 import database as dbc
 
 
 # Construct a BigQuery client object.
 client = bigquery.Client()
-storage_client = storage.Client()
+
 
 # Triggered by a change in a storage bucket
 @functions_framework.cloud_event
