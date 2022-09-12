@@ -54,10 +54,10 @@ resource "google_compute_instance" "vm_instance" {
 ####################################################################################
 
 # Create a Google Service Account.
-# resource "google_service_account" "service_account" {
-#   account_id   = var.service_account_id
-#   display_name = "A service account for Mia"
-# }
+resource "google_service_account" "service_account" {
+  account_id   = var.service_account_id
+  display_name = "A service account for Mia"
+}
 
 # attach roles to service account.
 resource "google_service_account_iam_member" "service_account_roles" {
