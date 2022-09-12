@@ -110,7 +110,8 @@ resource "google_storage_bucket" "trigger-bucket" {
 # Associate service account with bucket
 resource "google_storage_bucket_access_control" "public_rule" {
   bucket = google_storage_bucket.trigger-bucket.name
-  entity = "OWNER:${google_service_account.service_account.email}"
+  role   = "OWNER"
+  entity = "${google_service_account.service_account.email}"
 }
 
 
