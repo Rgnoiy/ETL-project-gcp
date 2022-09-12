@@ -166,7 +166,7 @@ resource "google_cloudfunctions2_function" "function" {
   description = "a new function"
 
   build_config {
-    runtime     = "python3.10"
+    runtime     = "python310"
     entry_point = "data_transformation" # Set the entry point in the code
     source {
       storage_source {
