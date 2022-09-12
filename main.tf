@@ -63,15 +63,15 @@ resource "google_service_account" "service_account" {
 resource "google_service_account_iam_member" "service_account_roles" {
   service_account_id = "${var.project_name}/${var.project_id}/${var.service_account_id}/${google_service_account.service_account.email}"
   for_each = toset([
-    "roles/iam.serviceAccountTokenCreator",
-    "roles/iam.serviceAccountKeys.create",
-	  "roles/storage.admin",
-	  "roles/cloudfunctions.admin",
-	  "roles/bigquery.admin",
-    "roles/pubsub.Admin",
-	  "roles/eventarc.eventReceiver",
-    "roles/run.invoker",
-    "roles/artifactregistry.reader",
+    "iam.serviceAccountTokenCreator",
+    "iam.serviceAccountKeys.create",
+	  "storage.admin",
+	  "cloudfunctions.admin",
+	  "bigquery.admin",
+    "pubsub.Admin",
+	  "eventarc.eventReceiver",
+    "run.invoker",
+    "artifactregistry.reader",
   ])
   role               = each.key
   member             = "serviceAccount:${google_service_account.service_account.email}"
