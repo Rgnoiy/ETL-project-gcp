@@ -57,7 +57,7 @@ resource "google_storage_bucket" "source-bucket" {
 resource "google_storage_bucket_object" "object" {
   name   = "function_source.zip"
   bucket = google_storage_bucket.source-bucket.name
-  source = "./function_source.zip"
+  source = "function_source.zip"
 }
 
 resource "google_cloudfunctions2_function" "function" {
@@ -104,20 +104,11 @@ resource "google_cloudfunctions2_function" "function" {
 
 resource "google_bigquery_dataset" "dataset" {
   dataset_id                  = "cafe_transformed_data"
-  location                    = "EU"
-
-  labels = {
-    env = "default"
-  }
+  location                    = "eu"
 
   access {
     role          = "OWNER"
     user_by_email = var.service_account_email
-  }
-
-  access {
-    role          = "OWNER"
-    user_by_email = "miaaayi55@gmail.com"
   }
 
   access {
