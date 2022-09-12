@@ -201,6 +201,9 @@ resource "google_cloudfunctions2_function" "function" {
       value = google_storage_bucket.trigger-bucket.name
     }
   }
+
+  output "function_uri" { 
+  value = google_cloudfunctions2_function.function.service_config[0].uri
 }
 
 ####################################################################################

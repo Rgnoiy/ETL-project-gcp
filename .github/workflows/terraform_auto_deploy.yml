@@ -49,6 +49,9 @@ jobs:
       
       - name: list all files
         run: ls
+      
+      - name: terraform destroy
+        run: terraform destroy
 
       - name: Terraform fmt
         run: terraform fmt -check
