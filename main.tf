@@ -136,34 +136,31 @@ resource "google_storage_bucket" "source-bucket" {
 # resource "google_project_iam_member" "gcs-pubsub-publishing" {
 #   project = "my-project-name"
 #   role    = "roles/pubsub.publisher"
-#   member  = "serviceAccount:${google_service_account.service_account.email}"
+#   member  = "serviceAccount:${var.service_account_email}"
 # }
 
 # resource "google_project_iam_member" "invoking" {
 #   project = var.project_id
 #   role    = "roles/run.invoker"
-#   member  = "serviceAccount:${google_service_account.service_account.email}"
+#   member  = "serviceAccount:${var.service_account_email}"
 #   depends_on = [google_project_iam_member.gcs-pubsub-publishing]
 # }
 
 # resource "google_project_iam_member" "event-receiving" {
 #   project = var.project_id
 #   role    = "roles/eventarc.eventReceiver"
-#   member  = "serviceAccount:${google_service_account.service_account.email}"
+#   member  = "serviceAccount:${var.service_account_email}"
 #   depends_on = [google_project_iam_member.invoking]
 # }
 
 # resource "google_project_iam_member" "artifactregistry-reader" {
 #   project = var.project_id
 #   role     = "roles/artifactregistry.reader"
-#   member   = "serviceAccount:${google_service_account.service_account.email}"
+#   member   = "serviceAccount:${var.service_account_email}"
 #   depends_on = [google_project_iam_member.event-receiving]
 # }
 
 resource "google_cloudfunctions2_function" "function" {
-  depends_on = [
-    google_service_account_iam_member.service_account_roles
-  ]
   name = "csv-transaction-function"
   location = var.region
   description = "a new function"
