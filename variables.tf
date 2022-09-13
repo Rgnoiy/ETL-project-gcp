@@ -15,6 +15,6 @@ variable "zone" {
 }
 
 variable "service_account_email" {
-  default = "mia-service-account@glass-haven-360720.iam.gserviceaccount.com"
+  default = "service-account@glass-haven-360720.iam.gserviceaccount.com"
 }
 

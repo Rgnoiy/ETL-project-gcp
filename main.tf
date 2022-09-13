@@ -1,33 +1,9 @@
 provider "google" {
+  credentials = "${file("glass-haven-360720-428d8438af1c.json")}"
   project = var.project_id
   region  = var.region
   zone    = var.zone
 }
-
-# set up a vm
-resource "google_compute_instance" "vm_instance" {
-  name         = "instance-3392"
-  machine_type = "e2-medium"
-  zone         = var.zone
-
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
-
-  network_interface {
-    # A default network is created for all GCP projects
-    network = "default"
-  }
-
-  service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    email  = "305781237272-compute@developer.gserviceaccount.com"
-    scopes = ["cloud-platform"]
-  }
-}
-
 
 ####################################################################################
 # CREATE BUCKET
@@ -102,17 +78,20 @@ resource "google_cloudfunctions2_function" "function" {
 ####################################################################################
 
 
-resource "google_bigquery_dataset" "dataset" {
-  dataset_id                  = "cafe_transformed_data"
+resource "google_bigquery_dataset" "cafe_data" {
+  dataset_id                  = "cafe_data"
   location                    = "eu"
+  delete_contents_on_destroy = true
 
   access {
     role          = "OWNER"
     user_by_email = var.service_account_email
   }
-
   access {
-    role   = "READER"
-    domain = "cafe.com"
+    role          = "OWNER"
+    user_by_email = "miaaayi55@gmail.com"
   }
 }
+
+
+

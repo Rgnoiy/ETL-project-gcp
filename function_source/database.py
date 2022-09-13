@@ -6,7 +6,7 @@ def create_tables(client):
       
     commands = (
     """
-    CREATE TABLE IF NOT EXISTS cafe_transformed_data.transaction(
+    CREATE TABLE IF NOT EXISTS cafe_data.transaction(
       transaction_hash_id STRING,
       timestamp STRING,
       store_id STRING,
@@ -17,7 +17,7 @@ def create_tables(client):
     
     
     """
-    CREATE TABLE IF NOT EXISTS cafe_transformed_data.product(
+    CREATE TABLE IF NOT EXISTS cafe_data.product(
       product_id STRING,
       product_name STRING,
       price DECIMAL,
@@ -25,7 +25,7 @@ def create_tables(client):
     """,
     
     """
-    CREATE TABLE IF NOT EXISTS cafe_transformed_data.store(
+    CREATE TABLE IF NOT EXISTS cafe_data.store(
       store_id STRING,
       store_name STRING,
     );
@@ -33,7 +33,7 @@ def create_tables(client):
     
     
     """
-    CREATE TABLE IF NOT EXISTS cafe_transformed_data.basket(
+    CREATE TABLE IF NOT EXISTS cafe_data.basket(
       transaction_hash_id STRING,
       product_id STRING,
       quantity INT

@@ -47,8 +47,10 @@ def test_product_df():
 
 
 def test_transaction_df():
-    transaction = LoadTransactionDF(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"), LoadStore(ReadCSVandCleanDF("test/csv_for_test/testfile1.csv"), 1), 1)
-    print(transaction)
+    df = ReadCSVandCleanDF("test/csv_for_test/testfile1.csv")
+    store_id = LoadStore(df, 1)
+    product_list = LoadProduct(ExplodedItems(df), 1)
+    transaction = LoadTransactionDF(df, store_id, 1)
     d = {
         'transaction_hash_id': ['3340786902', '7210250588', '6409276043'], \
         'timestamp': ['2022-06-15 09:23:00', '2022-06-15 09:25:00', '2022-06-15 09:27:00'], \
